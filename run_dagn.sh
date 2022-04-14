@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-export RECLOR_DIR=/scratch/vm2241/DAGN/reclor_data
-export LOGIQA_DIR=/scratch/vm2241/DAGN/logiqa_data
+export RECLOR_DIR=/scratch/vm2241/AdversarialLogiQA/reclor_data
+export LOGIQA_DIR=/scratch/vm2241/AdversarialLogiQA/logiqa_data
 export TASK_NAME=logiqa
 export MODEL_DIR=roberta-large
 export MODEL_TYPE=DAGN
@@ -10,7 +10,7 @@ export MODEL_VERSION=2132
 export GNN_VERSION=GCN
 export SAVE_DIR=dagn
 
-CUDA_VISIBLE_DEVICES=0 python3 run_multiple_choice.py \
+CUDA_VISIBLE_DEVICES=0 python3 -u run_multiple_choice.py \
     --disable_tqdm \
     --task_name $TASK_NAME \
     --model_type $MODEL_TYPE \
@@ -35,7 +35,7 @@ CUDA_VISIBLE_DEVICES=0 python3 run_multiple_choice.py \
     --gcn_lr 5e-6 \
     --proj_lr 5e-6 \
     --num_train_epochs 10 \
-    --output_dir /scratch/vm2241/DAGN/Checkpoints/$TASK_NAME/${SAVE_DIR} \
+    --output_dir /scratch/vm2241/AdversarialLogiQA/Checkpoints/$TASK_NAME/${SAVE_DIR} \
     --logging_steps 200 \
     --save_steps 800 \
     --adam_epsilon 1e-6 \
