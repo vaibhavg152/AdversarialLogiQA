@@ -7,7 +7,7 @@ export DATA_PROCESSING_VERSION=32
 export MODEL_VERSION=2132
 export GNN_VERSION=GCN
 export SAVE_DIR=dagn
-export MODEL_DIR=Checkpoints/$TASK_NAME/$SAVE_DIR/checkpoint-4800/
+export MODEL_DIR=Checkpoints/$TASK_NAME/$SAVE_DIR/checkpoint-6400/
 
 CUDA_VISIBLE_DEVICES=0 python3 run_multiple_choice.py \
     --disable_tqdm \
