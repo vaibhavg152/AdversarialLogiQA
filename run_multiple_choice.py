@@ -468,7 +468,7 @@ def main():
 
         result = trainer.evaluate()
 
-        output_eval_file = os.path.join(training_args.output_dir, "eval_results.txt")
+        output_eval_file = os.path.join(training_args.output_dir, data_args.data_dir + "_eval_results.txt")
         if trainer.is_world_master():
             with open(output_eval_file, "w") as writer:
                 logger.info("***** Eval results *****")
@@ -495,7 +495,7 @@ def main():
 
             test_result = trainer.predict(test_dataset)
 
-            output_test_file = os.path.join(training_args.output_dir, "test_results.txt")
+            output_test_file = os.path.join(training_args.output_dir, data_args.data_dir + "_test_results.txt")
             if trainer.is_world_master():
                 with open(output_test_file, "w") as writer:
                     logger.info("***** Test results *****")

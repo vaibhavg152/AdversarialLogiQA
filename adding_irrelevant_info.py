@@ -13,7 +13,7 @@ from datasets import load_dataset
 import nltk
 from nltk import sent_tokenize
 from nltk.corpus import brown
-from nltk.tokenize.moses import MosesDetokenizer
+from mosestokenizer import MosesDetokenizer
 import random
 from enum import Enum
 import os
@@ -26,8 +26,8 @@ shakespearean_text = [text.replace('\n', ' ') for text in sent_tokenize(dataset[
 # Download and preprocess Brown corpus
 nltk.download('brown')
 nltk.download('perluniprops')
-mdetok = MosesDetokenizer()
-brown_natural = [mdetok.detokenize(' '.join(sent).replace('``', '').replace("''", '').replace('`', "").split(), return_str=True)  for sent in brown.sents()]
+mdetok = MosesDetokenizer('en')
+brown_natural = [mdetok(' '.join(sent).replace('``', '').replace("''", '').replace('`', "").split())  for sent in brown.sents()]
 
 # Ensure that Train, Eval and Test files are in the same directory if not downloading
 # !wget https://raw.githubusercontent.com/lgw863/LogiQA-dataset/master/Train.txt -O Train.txt
@@ -80,7 +80,7 @@ def prepare_irrelavent_data(filename, pos: Position, irrelevant_data_source,
 
 data_sources = {'shakespeare': shakespearean_text, 'brown': brown_natural}
 logiQA_files = ['Train.txt', 'Eval.txt', 'Test.txt']
-position = Position.APPEND
+position = Position.IN_BETWEEN
 for file in logiQA_files:
   for data_source_name in data_sources:
-    prepare_irrelavent_data(file, position, data_sources[data_source_name], data_source_name)
+    prepare_irrelavent_data('logiqa_data/'+file, position, data_sources[data_source_name], data_source_name)
