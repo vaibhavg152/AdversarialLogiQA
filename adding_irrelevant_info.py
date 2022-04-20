@@ -11,12 +11,15 @@ import pandas as pd
 import datasets
 from datasets import load_dataset
 import nltk
-from nltk import sent_tokenize
+from nltk import sent_tokenize, word_tokenize
 from nltk.corpus import brown
-from nltk.tokenize.moses import MosesDetokenizer
 import random
 from enum import Enum
 import os
+from collections import defaultdict
+
+nltk.download('perluniprops')
+from nltk.tokenize.moses import MosesDetokenizer
 
 # Download and preprocess Shakespearean text
 dataset = load_dataset('tiny_shakespeare')['train']
@@ -25,7 +28,6 @@ shakespearean_text = [text.replace('\n', ' ') for text in sent_tokenize(dataset[
 
 # Download and preprocess Brown corpus
 nltk.download('brown')
-nltk.download('perluniprops')
 mdetok = MosesDetokenizer()
 brown_natural = [mdetok.detokenize(' '.join(sent).replace('``', '').replace("''", '').replace('`', "").split(), return_str=True)  for sent in brown.sents()]
 
@@ -39,8 +41,15 @@ class Position(Enum):
   IN_BETWEEN = 2
   APPEND = 3
 
+def group_sent_by_length(sentences):
+  sentence_groups = defaultdict(list)
+  for text in sentences:
+    sentence_groups[len(word_tokenize(text))].append(text)
+
+  return sentence_groups
+
 def prepare_irrelavent_data(filename, pos: Position, irrelevant_data_source, 
-                            out_file_name):
+                            out_file_name, irrelevant_data_length = None):
   
   with open(filename, 'r') as f:
     lines = f.readlines()
@@ -59,7 +68,11 @@ def prepare_irrelavent_data(filename, pos: Position, irrelevant_data_source,
     question = lines[i*8+3]
     answers = lines[i*8+4 : i*8+8]
 
-    irrelevant_data = random.choice(irrelevant_data_source)
+    if irrelevant_data_length is None:
+      random_length = random.choice(irrelevant_data_source.keys())
+      irrelevant_data = random.choice(irrelevant_data_source[random_length])
+    else:
+      irrelevant_data = random.choice(irrelevant_data_source[irrelevant_data_length])
     
     if pos == Position.PREPEND:
       context = irrelevant_data + ' ' + context + '\n'
@@ -78,9 +91,14 @@ def prepare_irrelavent_data(filename, pos: Position, irrelevant_data_source,
       for i in range(4):
         of.write(answers[i])
 
+shakespearean_text = group_sent_by_length(shakespearean_text)
+brown_natural = group_sent_by_length(brown_natural)
+irrelevant_data_word_length = 30
 data_sources = {'shakespeare': shakespearean_text, 'brown': brown_natural}
 logiQA_files = ['Train.txt', 'Eval.txt', 'Test.txt']
 position = Position.APPEND
+
 for file in logiQA_files:
   for data_source_name in data_sources:
-    prepare_irrelavent_data(file, position, data_sources[data_source_name], data_source_name)
+    prepare_irrelavent_data(file, position, data_sources[data_source_name], 
+                            data_source_name, irrelevant_data_word_length)
