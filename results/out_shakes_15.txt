@@ -1,0 +1,48 @@
+04/20/2022 05:09:16 - WARNING - __main__ -   Process rank: -1, device: cuda:0, n_gpu: 1, distributed training: False, 16-bits training: False
+04/20/2022 05:09:16 - INFO - __main__ -   Training/evaluation parameters TrainingArguments(output_dir='Checkpoints/logiqa/dagn', overwrite_output_dir=False, do_train=False, do_eval=True, do_predict=True, evaluate_during_training=False, prediction_loss_only=False, per_device_train_batch_size=8, per_device_eval_batch_size=4, per_gpu_train_batch_size=None, per_gpu_eval_batch_size=None, gradient_accumulation_steps=4, learning_rate=5e-05, weight_decay=0.0, adam_beta1=0.9, adam_beta2=0.999, adam_epsilon=1e-08, max_grad_norm=1.0, num_train_epochs=3.0, max_steps=-1, warmup_steps=0, logging_dir='runs/Apr20_05-09-16_b-3-1', logging_first_step=False, logging_steps=500, save_steps=500, save_total_limit=None, no_cuda=False, seed=42, fp16=False, fp16_opt_level='O1', local_rank=-1, tpu_num_cores=None, tpu_metrics_debug=False, debug=False, dataloader_drop_last=False, eval_steps=1000, past_index=-1, run_name=None, disable_tqdm=True, remove_unused_columns=True)
+04/20/2022 05:09:27 - INFO - utils_multiple_choice -   Loading features from cached file Shakespeare_logiqa/cached_data/dagn_cached_eval_RobertaTokenizer_256_logiqa_dataprov32_graphv4
+04/20/2022 05:09:27 - INFO - utils_multiple_choice -   Loading features from cached file Shakespeare_logiqa/cached_data/dagn_cached_test_RobertaTokenizer_256_logiqa_dataprov32_graphv4
+04/20/2022 05:09:30 - INFO - __main__ -   *** Evaluate ***
+/ext3/miniconda3/envs/dagn/lib/python3.7/site-packages/transformers/trainer.py:1048: FutureWarning: This method is deprecated, use `Trainer.is_world_process_zero()` instead.
+  warnings.warn("This method is deprecated, use `Trainer.is_world_process_zero()` instead.", FutureWarning)
+04/20/2022 05:10:16 - INFO - __main__ -   ***** Eval results *****
+04/20/2022 05:10:16 - INFO - __main__ -     eval_loss = 2.897987588026923
+04/20/2022 05:10:16 - INFO - __main__ -     eval_acc = 0.3794162826420891
+04/20/2022 05:10:16 - INFO - __main__ -   *** Test ***
+04/20/2022 05:11:02 - INFO - __main__ -   ***** Test results *****
+04/20/2022 05:11:02 - INFO - __main__ -     eval_loss = 2.8799540874778584
+04/20/2022 05:11:02 - INFO - __main__ -     eval_acc = 0.3901689708141321
+init complete
+yayyyyyyyyyy 10
+yayyyyyyyyyy 20
+yayyyyyyyyyy 30
+yayyyyyyyyyy 40
+yayyyyyyyyyy 50
+yayyyyyyyyyy 60
+yayyyyyyyyyy 70
+yayyyyyyyyyy 80
+yayyyyyyyyyy 90
+yayyyyyyyyyy 100
+yayyyyyyyyyy 110
+yayyyyyyyyyy 120
+yayyyyyyyyyy 130
+yayyyyyyyyyy 140
+yayyyyyyyyyy 150
+yayyyyyyyyyy 160
+{'eval_loss': 2.897987588026923, 'eval_acc': 0.3794162826420891, 'step': 0}
+yayyyyyyyyyy 170
+yayyyyyyyyyy 180
+yayyyyyyyyyy 190
+yayyyyyyyyyy 200
+yayyyyyyyyyy 210
+yayyyyyyyyyy 220
+yayyyyyyyyyy 230
+yayyyyyyyyyy 240
+yayyyyyyyyyy 250
+yayyyyyyyyyy 260
+yayyyyyyyyyy 270
+yayyyyyyyyyy 280
+yayyyyyyyyyy 290
+yayyyyyyyyyy 300
+yayyyyyyyyyy 310
+yayyyyyyyyyy 320
