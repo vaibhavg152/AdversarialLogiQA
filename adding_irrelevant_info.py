@@ -20,17 +20,16 @@ import os
 import sys
 from collections import defaultdict
 
-nltk.download('perluniprops')
-from nltk.tokenize.moses import MosesDetokenizer
+# nltk.download('perluniprops')
 
 # Download and preprocess Shakespearean text
 dataset = load_dataset('tiny_shakespeare')['train']
-nltk.download('punkt')
+# nltk.download('punkt')
 shakespearean_text = [text.replace('\n', ' ') for text in sent_tokenize(dataset['text'][0])]
 
 # Download and preprocess Brown corpus
-nltk.download('brown')
-nltk.download('perluniprops')
+# nltk.download('brown')
+# nltk.download('perluniprops')
 mdetok = MosesDetokenizer('en')
 brown_natural = [mdetok(' '.join(sent).replace('``', '').replace("''", '').replace('`', "").split())  for sent in brown.sents()]
 
@@ -48,8 +47,9 @@ def group_sent_by_length(sentences):
   sentence_groups = defaultdict(list)
   for text in sentences:
     sentence_groups[len(word_tokenize(text))].append(text)
-
-  return sentence_groups
+  keys = sorted(sentence_groups.keys())
+  new_dict = {x:sentence_groups[x] for x in keys}
+  return new_dict
 
 def prepare_irrelavent_data(filename, pos: Position, irrelevant_data_source, 
                             out_file_name, irrelevant_data_length = None):
@@ -60,8 +60,8 @@ def prepare_irrelavent_data(filename, pos: Position, irrelevant_data_source,
   assert len(lines)%8==0
   n_examples = len(lines) // 8
 
-  out_file_name = filename[:filename.index('.')] + '_' + out_file_name + '.txt'
-
+  out_file_name = '{}_logiqa/{}'.format(out_file_name, filename.split('/')[-1])
+  # print(out_file_name)
   if os.path.exists(out_file_name):
     os.remove(out_file_name)
 
@@ -75,6 +75,7 @@ def prepare_irrelavent_data(filename, pos: Position, irrelevant_data_source,
       random_length = random.choice(irrelevant_data_source.keys())
       irrelevant_data = random.choice(irrelevant_data_source[random_length])
     else:
+      # print([(x, len(irrelevant_data_source[x])) for x in irrelevant_data_source])
       irrelevant_data = random.choice(irrelevant_data_source[irrelevant_data_length])
     
     if pos == Position.PREPEND:
@@ -93,16 +94,18 @@ def prepare_irrelavent_data(filename, pos: Position, irrelevant_data_source,
       of.write(question)
       for i in range(4):
         of.write(answers[i])
+    print(out_file_name)
 
 shakespearean_text = group_sent_by_length(shakespearean_text)
 brown_natural = group_sent_by_length(brown_natural)
-data_sources = {'shakespeare': shakespearean_text, 'brown': brown_natural}
-logiQA_files = ['Eval.txt', 'Test.txt']
+data_sources = {'Brown': brown_natural, 'Shakespeare': shakespearean_text}
+logiQA_files = ['logiqa_data/Eval.txt', 'logiqa_data/Test.txt']
 position = Position.IN_BETWEEN
 
-irrelevant_data_word_length = sys.args[1]
+irrelevant_data_word_length = int(sys.argv[1])
 
+print("length =", irrelevant_data_word_length)
 for file in logiQA_files:
-  for data_source_name in data_sources:
-    prepare_irrelavent_data('logiqa_data/{}_'.format(irrelevant_data_word_length)+file, position, data_sources[data_source_name], 
+  for data_source_name, source in data_sources.items():
+    prepare_irrelavent_data(file, position, source,
                             data_source_name, irrelevant_data_word_length)
