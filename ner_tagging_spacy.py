@@ -11,7 +11,10 @@ files = ['Eval.txt', 'Test.txt', 'Train.txt']
 
 def ner(text):
     doc = nlp(text)
-    return list(set([e.text for e in doc.ents]))
+    ents = []
+    for e in doc.ents:
+    	ents += e.text.split()
+    return list(set(ents))
 
 
 for filename in files:
@@ -26,10 +29,11 @@ for filename in files:
     	context = lines[i*8+2].strip()
     	question = lines[i*8+3]
     	answers = lines[i*8+4 : i*8+8]
+    	answers = [a[2:] for a in answers]
     	out.append({'entities': ner("\n".join([context, question] + answers))})
 #    	print(out[-1])
     print("writing to {}/{}_ner{}".format(data_path, filename[:-4], filename[-4:]))
-    print((time.time()-s)//6)
+    print((time.time()-s))
     with open(data_path + '/' + filename[:-4]+'_ner'+filename[-4:], 'w') as f:
     	json.dump(out, f, indent=4)
 #    	print(ner_context)
