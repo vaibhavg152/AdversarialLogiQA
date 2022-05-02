@@ -34,6 +34,8 @@ for filename in files:
 
     	out.append({'context':ner(context), 'question':ner(question),
     		    'answers':[ner(a) for a in answers]})
+        entities = list(out[-1]['context'].keys()) + list(out[-1]['question'].keys()) + [list(a.keys()) for a in out[-1]['answers']]
+        out[-1]['entities'] = list(set(entities))
     	print(out[-1])
     print("writing to {}/{}_ner{}".format(data_path, filename[:-4], filename[-4:]))
     with open(data_path + '/' + filename[:-4]+'_ner'+filename[-4:], 'w') as f:

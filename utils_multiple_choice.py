@@ -63,6 +63,7 @@ class InputFeatures:
     passage_mask: Optional[List[int]]
     question_mask: Optional[List[int]]
     argument_bpe_ids: Optional[List[List[int]]]
+    entity_bpe_ids: Optional[List[List[int]]]
     domain_bpe_ids: Optional[List[List[int]]]
     punct_bpe_ids: Optional[List[List[int]]]
     label: Optional[int]
@@ -137,13 +138,16 @@ if is_torch_available():
                             examples = processor.get_dev_demos(data_dir)
                         else:
                             examples = processor.get_dev_examples(data_dir)
+                        entities = processor.get_dev_entities(data_dir)
                     elif mode == Split.test:
                         examples = processor.get_test_examples(data_dir)
+                        entities = processor.get_test_entities(data_dir)
                     elif mode == Split.train:
                         if demo:
                             examples = processor.get_train_demos(data_dir)
                         else:
                             examples = processor.get_train_examples(data_dir)
+                        entities = processor.get_train_entities(data_dir)
                     else:
                         raise Exception()
                     logger.info("Training examples: %s", len(examples))
@@ -151,6 +155,7 @@ if is_torch_available():
 
                     self.features = convert_examples_to_arg_features(
                         examples,
+                        entities,
                         label_list,
                         arg_tokenizer,
                         relations,
@@ -159,6 +164,7 @@ if is_torch_available():
                         tokenizer,
                         max_ngram
                     )
+                    raise ValueError()
                     logger.info("Saving features into cached file %s", cached_features_file)
                     torch.save(self.features, cached_features_file)
 
@@ -182,6 +188,18 @@ class DataProcessor:
         raise NotImplementedError()
 
     def get_test_examples(self, data_dir):
+        """Gets a collection of `InputExample`s for the test set."""
+        raise NotImplementedError()
+
+    def get_train_entities(self, data_dir):
+        """Gets a collection of `InputExample`s for the train set."""
+        raise NotImplementedError()
+
+    def get_dev_entities(self, data_dir):
+        """Gets a collection of `InputExample`s for the dev set."""
+        raise NotImplementedError()
+
+    def get_test_entities(self, data_dir):
         """Gets a collection of `InputExample`s for the test set."""
         raise NotImplementedError()
 
@@ -273,6 +291,18 @@ class LogiQAProcessor(DataProcessor):
         logger.info("LOOKING AT {} test".format(data_dir))
         return self._create_examples(self._read_txt(os.path.join(data_dir, "Test.txt")), "test")
 
+    def get_train_entities(self, data_dir):
+        logger.info("LOOKING AT {} train ner".format(data_dir))
+        return json.load(open(os.path.join(data_dir, "Train_ner.txt")))
+
+    def get_dev_entities(self, data_dir):
+        logger.info("LOOKING AT {} dev ner".format(data_dir))
+        return json.load(open(os.path.join(data_dir, "Eval_ner.txt")))
+
+    def get_test_entities(self, data_dir):
+        logger.info("LOOKING AT {} test ner".format(data_dir))
+        return json.load(open(os.path.join(data_dir, "Test_ner.txt")))
+
     def get_labels(self):
         return [0, 1, 2, 3]
 
@@ -315,6 +345,7 @@ class LogiQAProcessor(DataProcessor):
 
 def convert_examples_to_arg_features(
     examples: List[InputExample],
+    entities: List[Dict],
     label_list: List[str],
     arg_tokenizer,
     relations: Dict,
@@ -338,7 +369,11 @@ def convert_examples_to_arg_features(
     for (ex_index, example) in tqdm.tqdm(enumerate(examples), desc="convert examples to features"):
         if ex_index % 10000 == 0:
             logger.info("Writing example %d of %d" % (ex_index, len(examples)))
+#        if (ex_index + 1) % 25 == 0:
+#            logger.info("Writing example %d of %d" % (ex_index, len(examples)))
+#            raise Exception()
         choices_inputs = []
+#        print(ex_index, example.contexts[0][:100])
         for ending_idx, (context, ending) in enumerate(zip(example.contexts, example.endings)):
             text_a = context
             if example.question.find("_") != -1:
@@ -348,7 +383,7 @@ def convert_examples_to_arg_features(
                 text_b = example.question + " " + ending
 
             stopwords = list(gensim.parsing.preprocessing.STOPWORDS) + punctuations
-            inputs = arg_tokenizer(text_a, text_b, tokenizer, stopwords, relations, punctuations, max_ngram, max_length)
+            inputs = arg_tokenizer(text_a, text_b, tokenizer, stopwords, relations, punctuations, max_ngram, max_length, entities=entities[ex_index])
             choices_inputs.append(inputs)
 
         label = label_map[example.label]
@@ -363,7 +398,10 @@ def convert_examples_to_arg_features(
         a_mask = [x["a_mask"] for x in choices_inputs]
         b_mask = [x["b_mask"] for x in choices_inputs]  # list[list]
         argument_bpe_ids = [x["argument_bpe_ids"] for x in choices_inputs]
+        entity_bpe_ids = [x["entity_bpe_ids"] for x in choices_inputs]
         if isinstance(argument_bpe_ids[0], tuple):  # (argument_bpe_pattern_ids, argument_bpe_type_ids)
+            # should be false ideally
+            assert False, "something is wrong."
             arg_bpe_pattern_ids, arg_bpe_type_ids = [], []
             for choice_pattern, choice_type in argument_bpe_ids:
                 assert (np.array(choice_pattern) > 0).tolist() == (np.array(choice_type) > 0).tolist(), 'pattern: {}\ntype: {}'.format(
@@ -383,15 +421,17 @@ def convert_examples_to_arg_features(
                 passage_mask=a_mask,
                 question_mask=b_mask,
                 argument_bpe_ids=argument_bpe_ids,
+                entity_bpe_ids=entity_bpe_ids,
                 domain_bpe_ids=domain_bpe_ids,
                 punct_bpe_ids=punct_bpe_ids,
                 label=label
             )
         )
+#        break
 
     for f in features[:2]:
         logger.info("*** Example ***")
-        logger.info("feature: %s" % f)
+        logger.info("feature: %s" % f.entity_bpe_ids)
 
     return features
 

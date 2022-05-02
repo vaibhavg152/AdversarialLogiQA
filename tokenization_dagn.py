@@ -30,13 +30,15 @@ from textblob import TextBlob
 from nltk.stem import WordNetLemmatizer, SnowballStemmer
 stemmer = SnowballStemmer("english")
 
+import string
+
 
 def token_stem(token):
     return stemmer.stem(token)
 
 
 def arg_tokenizer(text_a, text_b, tokenizer, stopwords, relations:dict, punctuations:list,
-                  max_gram:int, max_length:int, do_lower_case:bool=False):
+                  max_gram:int, max_length:int, do_lower_case:bool=False, entities=None, stemming=True):
     '''
     :param text_a: str. (context in a sample.)
     :param text_b: str. ([#1] option in a sample. [#2] question + option in a sample.)
@@ -107,6 +109,13 @@ def arg_tokenizer(text_a, text_b, tokenizer, stopwords, relations:dict, punctuat
         return punct_ids
 
     def _find_arg_ngrams(tokens, max_gram):
+        '''
+            Returns argument_words, argument_ids
+                argument_words: dict([ngram:string, tuple(ngram_start_idx:int, ngram_end_idx:int)]}
+                argument_ids: list(token_idx -> token_type)
+                    token_type: values in the relations
+                        relations: dict loaded from json
+        '''
         n_tokens = len(tokens)
         global_arg_start_end = []
         argument_words = {}
@@ -197,8 +206,55 @@ def arg_tokenizer(text_a, text_b, tokenizer, stopwords, relations:dict, punctuat
     ''' start '''
     bpe_tokens_a = tokenizer.tokenize(text_a)
     bpe_tokens_b = tokenizer.tokenize(text_b)
+
+    remove_punct = lambda x: "".join([c if c==' ' or c.isalnum() else ' ' for c in x])
+    text_a, text_b = remove_punct(text_a), remove_punct(text_b)
+    words_a = text_a.split()
+    words_b = text_b.split()
+    entity_ids_a = [0 for _ in bpe_tokens_a]
+    entity_ids_b = [0 for _ in bpe_tokens_b]
+
+    if stemming:
+        entities['entities'] = [token_stem(remove_punct(token)) for token in entities['entities']]
+
+    start, sp = 0, 0
+    for end, t in enumerate(bpe_tokens_a):
+    	cur_word = remove_punct(tokenizer.convert_tokens_to_string(bpe_tokens_a[start:end])).strip().lower()
+    	if len(cur_word) == 0:
+    	    start = end
+    	    continue
+    	if cur_word == words_a[sp].strip().lower():
+    	    w = token_stem(words_a[sp])
+    	    if w in entities['entities']:
+    	    	for idx in range(start, end):
+    	    	    entity_ids_a[idx] = 1 + entities['entities'].index(w)
+    	    start = end
+    	    sp += 1
+#    	    print(w, end=" ")
+#    print()
+    if start != end:
+    	print("start is not same as end.", start, end, len(bpe_tokens_a), cur_word)
+#    	print(text_a)
+
+    start, sp = 0, 0
+    for end, t in enumerate(bpe_tokens_b):
+    	cur_word = remove_punct(tokenizer.convert_tokens_to_string(bpe_tokens_b[start:end])).strip().lower()
+    	if len(cur_word) == 0:
+    	    start = end
+    	    continue
+    	if cur_word == words_b[sp].strip().lower():
+    	    w = token_stem(words_b[sp])
+    	    if w in entities['entities']:
+    	    	for idx in range(start, end):
+    	    	    entity_ids_b[idx] = 1 + entities['entities'].index(w)
+    	    start = end
+    	    sp += 1
+#    	    print(w, end=" ")
+#    print()
+
     bpe_tokens = [tokenizer.bos_token] + bpe_tokens_a + [tokenizer.sep_token] + \
                     bpe_tokens_b + [tokenizer.eos_token]
+    entity_space_ids = [0] + entity_ids_a + [0] + entity_ids_b + [0]
 
     a_mask = [1] * (len(bpe_tokens_a) + 2) + [0] * (max_length - (len(bpe_tokens_a) + 2))
     b_mask = [0] * (len(bpe_tokens_a) + 2) + [1] * (len(bpe_tokens_b) + 1) + [0] * (max_length - len(bpe_tokens))
@@ -240,6 +296,10 @@ def arg_tokenizer(text_a, text_b, tokenizer, stopwords, relations:dict, punctuat
     domain_bpe_ids = domain_bpe_ids[:max_length]
     punct_bpe_ids = punct_bpe_ids[:max_length]
 
+    # ADDED:
+#    entity_space_ids = _find_entities(bare_tokens, mappings)
+    entity_bpe_ids = (entity_space_ids + arg_dom_padding_ids)[:max_length]
+
     assert len(input_ids) <= max_length, 'len_input_ids={}, max_length={}'.format(len(input_ids), max_length)
     assert len(input_mask) <= max_length, 'len_input_mask={}, max_length={}'.format(len(input_mask), max_length)
     assert len(segment_ids) <= max_length, 'len_segment_ids={}, max_length={}'.format(len(segment_ids), max_length)
@@ -254,13 +314,15 @@ def arg_tokenizer(text_a, text_b, tokenizer, stopwords, relations:dict, punctuat
     output["input_tokens"] = bpe_tokens
     output["input_ids"] = input_ids
     output["attention_mask"] = input_mask
-    output["token_type_ids"] = segment_ids
-    output["argument_bpe_ids"] = argument_bpe_ids
     output["domain_bpe_ids"] = domain_bpe_ids
+    output["entity_bpe_ids"] = entity_bpe_ids
+    output["argument_bpe_ids"] = argument_bpe_ids
     output["punct_bpe_ids"] = punct_bpe_ids
     output["a_mask"] = a_mask
     output["b_mask"] = b_mask
-
+    # print(list(zip(bare_tokens, entity_bpe_ids)))
+    # print(entities['entities'])
+    # raise Exception()
     return output
 
 

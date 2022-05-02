@@ -105,7 +105,7 @@ class DAGN(BertPreTrainedModel):
         print('init complete')
 
 
-    def split_into_spans_9(self, seq, seq_mask, split_bpe_ids):
+    def split_into_spans_9(self, seq, seq_mask, split_bpe_ids, entities):
         '''
 
             :param seq: (bsz, seq_length, embed_size)
@@ -137,7 +137,8 @@ class DAGN(BertPreTrainedModel):
         span_masks = []
         edges = []
         node_in_seq_indices = []
-        for item_seq_mask, item_seq, item_split_ids in zip(seq_mask, seq, split_bpe_ids):
+        entity_graphs = []
+        for item_seq_mask, item_seq, item_split_ids, item_entities in zip(seq_mask, seq, split_bpe_ids, entities):
             item_seq_len = item_seq_mask.sum().item()
             item_seq = item_seq[:item_seq_len]
             item_split_ids = item_split_ids[:item_seq_len]
@@ -157,7 +158,6 @@ class DAGN(BertPreTrainedModel):
                     if not len(span) == 0:
                         item_spans.append(span.sum(0))
                         item_mask.append(1)
-
                 else:
                     span = item_seq[split_ids_indices[i] + 1:split_ids_indices[i + 1]]
                     if not len(span) == 0:
@@ -167,6 +167,19 @@ class DAGN(BertPreTrainedModel):
                         item_node_in_seq_indices.append([i for i in range(grouped_split_ids_indices[i][-1] + 1,
                                                                           grouped_split_ids_indices[i + 1][0])])
 
+            ### ADDED:
+            ent_matrix = torch.zeros(shape=(n_split_ids, n_split_ids))
+            for i1 in range(n_split_ids-1):
+                s1 = set(item_entities[split_ids_indices[i1]+1:split_ids_indices[i1+1]])
+                for i2 in range(i1+1, n_split_ids):
+                    e = len(item_seq) if i2==n_split_ids-1 else split_ids_indices[i2+1]
+                    for ent in item_entities[split_ids[i2]+1: e]:
+                        if ent in s1:
+                            ent_matrix[i1, i2] = 1
+                            break
+
+            entity_graph.append(ent_matrix)
+            ###
             encoded_spans.append(item_spans)
             span_masks.append(item_mask)
             edges.append(item_edges)
@@ -183,11 +196,20 @@ class DAGN(BertPreTrainedModel):
         encoded_spans = torch.stack(encoded_spans, dim=0)
         encoded_spans = encoded_spans.to(device).float()
 
+        ### ADDED:
+        entity_adjacency = torch.zeros(shape=(len(entity_graph), max_nodes, max_nodes))
+        for bidx, m in enumerate(entity_graph):
+            for ridx, r in enumerate(m):
+                for cidx in range(ridx+1, len(m)):
+                    entity_adjacency[bidx, ridx, cidx] = r[cidx]
+                    entity_adjacency[bidx, cidx, ridx] = r[cidx]
+        ###
+
         # Truncate head and tail of each list in edges HERE.
         #     Because the head and tail edge DO NOT contribute to the argument graph and punctuation graph.
         truncated_edges = [item[1:-1] for item in edges]
 
-        return encoded_spans, span_masks, truncated_edges, node_in_seq_indices
+        return encoded_spans, span_masks, truncated_edges, node_in_seq_indices, entity_adjacency
 
     def get_gcn_info_vector(self, indices, node, size, device):
         '''
@@ -263,6 +285,7 @@ class DAGN(BertPreTrainedModel):
                 question_mask: torch.LongTensor,
 
                 argument_bpe_ids: torch.LongTensor,
+                entity_bpe_ids: torch.LongTensor,
                 domain_bpe_ids: torch.LongTensor,
                 punct_bpe_ids: torch.LongTensor,
 
@@ -284,6 +307,7 @@ class DAGN(BertPreTrainedModel):
         flat_question_mask = question_mask.view(-1, question_mask.size(-1)) if question_mask is not None else None
 
         flat_argument_bpe_ids = argument_bpe_ids.view(-1, argument_bpe_ids.size(-1)) if argument_bpe_ids is not None else None
+        flat_entity_bpe_ids = entity_bpe_ids.view(-1, argument_bpe_ids.size(-1)) if argument_bpe_ids is not None else None
         flat_domain_bpe_ids = domain_bpe_ids.view(-1, domain_bpe_ids.size(-1)) if domain_bpe_ids is not None else None  
         flat_punct_bpe_ids = punct_bpe_ids.view(-1, punct_bpe_ids.size(-1)) if punct_bpe_ids is not None else None
 
@@ -296,7 +320,8 @@ class DAGN(BertPreTrainedModel):
             ''' The GCN branch. Suppose to go back to baseline once remove. '''
             new_punct_id = self.max_rel_id + 1
             new_punct_bpe_ids = new_punct_id * flat_punct_bpe_ids  # punct_id: 1 -> 4. for incorporating with argument_bpe_ids.
-            _flat_all_bpe_ids = flat_argument_bpe_ids + new_punct_bpe_ids  # -1:padding, 0:non, 1-3: arg, 4:punct.
+            # _flat_all_bpe_ids = flat_argument_bpe_ids + new_punct_bpe_ids  # -1:padding, 0:non, 1-3: arg, 4:punct.
+            _flat_all_bpe_ids = flat_argument_bpe_ids + flat_entity_bpe_ids + new_punct_bpe_ids  # -1:padding, 0:non, 1-3: arg, 4:punct.
             overlapped_punct_argument_mask = (_flat_all_bpe_ids > new_punct_id).long()
             flat_all_bpe_ids = _flat_all_bpe_ids * (1 - overlapped_punct_argument_mask) + flat_argument_bpe_ids * overlapped_punct_argument_mask
             assert flat_argument_bpe_ids.max().item() <= new_punct_id
@@ -305,15 +330,15 @@ class DAGN(BertPreTrainedModel):
             # span_mask: (bsz x n_choices, n_nodes)
             # edges: list[list[int]]
             # node_in_seq_indices: list[list[list[int]]]
-            encoded_spans, span_mask, edges, node_in_seq_indices = self.split_into_spans_9(sequence_output,
-                                                                                           flat_attention_mask,
-                                                                                           flat_all_bpe_ids)
+            encoded_spans, span_mask, edges, node_in_seq_indices, entity_graph = self.split_into_spans_9(sequence_output,
+                                                                                           flat_attention_mask, flat_all_bpe_ids)
 
-            argument_graph, punctuation_graph = self.get_adjacency_matrices_2(edges, n_nodes=encoded_spans.size(1), device=encoded_spans.device)
+            argument_graph, punctuation_graph = self.get_adjacency_matrices_2(edges,
+                                                                n_nodes=encoded_spans.size(1), device=encoded_spans.device)
 
             node, node_weight = self._gcn(node=encoded_spans, node_mask=span_mask,
                                           argument_graph=argument_graph,
-                                          punctuation_graph=punctuation_graph)  
+                                          punctuation_graph=punctuation_graph, entity_graph=entity_graph)  
 
             gcn_info_vec = self.get_gcn_info_vector(node_in_seq_indices, node,
                                                     size=sequence_output.size(), device=sequence_output.device)  
