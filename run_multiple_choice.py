@@ -447,7 +447,7 @@ def main():
             eval_dataset=eval_dataset,
             compute_metrics=compute_metrics,
         )
-    print("Data loader has this:", trainer.get_train_dataloader()[0])
+    print("Data loader has this:", iter(trainer.get_eval_dataloader()).__next__())
 
 
     # Training

@@ -164,7 +164,6 @@ if is_torch_available():
                         tokenizer,
                         max_ngram
                     )
-                    raise ValueError()
                     logger.info("Saving features into cached file %s", cached_features_file)
                     torch.save(self.features, cached_features_file)
 
@@ -373,6 +372,8 @@ def convert_examples_to_arg_features(
 #            logger.info("Writing example %d of %d" % (ex_index, len(examples)))
 #            raise Exception()
         choices_inputs = []
+#        if ex_index/10 != 339:
+#            continue
 #        print(ex_index, example.contexts[0][:100])
         for ending_idx, (context, ending) in enumerate(zip(example.contexts, example.endings)):
             text_a = context
@@ -431,7 +432,7 @@ def convert_examples_to_arg_features(
 
     for f in features[:2]:
         logger.info("*** Example ***")
-        logger.info("feature: %s" % f.entity_bpe_ids)
+        logger.info("feature: %s" % [list(set(e)) for e in f.entity_bpe_ids])
 
     return features
 

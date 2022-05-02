@@ -168,17 +168,17 @@ class DAGN(BertPreTrainedModel):
                                                                           grouped_split_ids_indices[i + 1][0])])
 
             ### ADDED:
-            ent_matrix = torch.zeros(shape=(n_split_ids, n_split_ids))
+            ent_matrix = torch.zeros(size=(n_split_ids, n_split_ids))
             for i1 in range(n_split_ids-1):
                 s1 = set(item_entities[split_ids_indices[i1]+1:split_ids_indices[i1+1]])
                 for i2 in range(i1+1, n_split_ids):
                     e = len(item_seq) if i2==n_split_ids-1 else split_ids_indices[i2+1]
-                    for ent in item_entities[split_ids[i2]+1: e]:
+                    for ent in item_entities[split_ids_indices[i2]+1: e]:
                         if ent in s1:
                             ent_matrix[i1, i2] = 1
                             break
 
-            entity_graph.append(ent_matrix)
+            entity_graphs.append(ent_matrix)
             ###
             encoded_spans.append(item_spans)
             span_masks.append(item_mask)
@@ -197,8 +197,8 @@ class DAGN(BertPreTrainedModel):
         encoded_spans = encoded_spans.to(device).float()
 
         ### ADDED:
-        entity_adjacency = torch.zeros(shape=(len(entity_graph), max_nodes, max_nodes))
-        for bidx, m in enumerate(entity_graph):
+        entity_adjacency = torch.zeros(size=(len(entity_graphs), max_nodes, max_nodes))
+        for bidx, m in enumerate(entity_graphs):
             for ridx, r in enumerate(m):
                 for cidx in range(ridx+1, len(m)):
                     entity_adjacency[bidx, ridx, cidx] = r[cidx]
@@ -331,10 +331,11 @@ class DAGN(BertPreTrainedModel):
             # edges: list[list[int]]
             # node_in_seq_indices: list[list[list[int]]]
             encoded_spans, span_mask, edges, node_in_seq_indices, entity_graph = self.split_into_spans_9(sequence_output,
-                                                                                           flat_attention_mask, flat_all_bpe_ids)
+                                                                                           flat_attention_mask, flat_all_bpe_ids, entity_bpe_ids)
 
             argument_graph, punctuation_graph = self.get_adjacency_matrices_2(edges,
                                                                 n_nodes=encoded_spans.size(1), device=encoded_spans.device)
+            entity_graph = entity_graph.to(encoded_spans.device)
 
             node, node_weight = self._gcn(node=encoded_spans, node_mask=span_mask,
                                           argument_graph=argument_graph,

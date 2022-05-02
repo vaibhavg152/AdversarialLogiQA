@@ -133,6 +133,47 @@ def arg_tokenizer(text_a, text_b, tokenizer, stopwords, relations:dict, punctuat
 
         return argument_words, argument_ids
 
+    def _find_entities(text, tokens):
+    	remove_punct = lambda x: "".join([c if c.isascii() and (c==' ' or c.isalnum()) else ' ' for c in x])
+    	words = remove_punct(text).split()
+    	# print("removed non-alnum:", remove_punct(text))
+    	entity_ids = [0 for _ in tokens]
+
+    	if stemming:
+    	    entities['entities'] = [token_stem(remove_punct(token).strip()) for token in entities['entities']]
+
+    	start, sp = 0, 0
+    	for end in range(len(tokens)+1):
+    	    cur_word = remove_punct(tokenizer.convert_tokens_to_string(tokens[start:end])).strip().lower()
+    	    if len(cur_word) == 0:
+    	        start = end
+    	        continue
+#    	    print(start, end, cur_word)
+#    	    print(sp, words[sp])
+    	    if cur_word == words[sp].strip().lower():
+    	        w = token_stem(words[sp])
+    	        if w in entities['entities']:
+    	            for idx in range(start, end):
+    	                entity_ids[idx] = 1 + entities['entities'].index(w)
+    	        start = end
+    	        sp += 1
+#    	    elif ' ' in cur_word:
+#    	        loc = cur_word.index(' ')
+#    	        print("okay this is something")
+#    	        w = token_stem(words[sp])
+#    	        if w in entities['entities']:
+#    	            for idx in range(start, loc):
+#    	                entity_ids[idx] = 1 + entities['entities'].index(w)
+#    	        start = loc+1
+#    	        sp += 1
+    	if start != end:
+    	    print("start != end.", start, end, len(tokens), cur_word)
+    	    print(words)
+    	if sp != len(words):
+    	    print("sp != end.", start, end, len(tokens), cur_word)
+#    	    print(words)
+    	return entity_ids
+
     def _find_dom_ngrams_2(tokens, max_gram):
         '''
         1. 判断 stopwords 和 sep token
@@ -207,54 +248,9 @@ def arg_tokenizer(text_a, text_b, tokenizer, stopwords, relations:dict, punctuat
     bpe_tokens_a = tokenizer.tokenize(text_a)
     bpe_tokens_b = tokenizer.tokenize(text_b)
 
-    remove_punct = lambda x: "".join([c if c==' ' or c.isalnum() else ' ' for c in x])
-    text_a, text_b = remove_punct(text_a), remove_punct(text_b)
-    words_a = text_a.split()
-    words_b = text_b.split()
-    entity_ids_a = [0 for _ in bpe_tokens_a]
-    entity_ids_b = [0 for _ in bpe_tokens_b]
-
-    if stemming:
-        entities['entities'] = [token_stem(remove_punct(token)) for token in entities['entities']]
-
-    start, sp = 0, 0
-    for end, t in enumerate(bpe_tokens_a):
-    	cur_word = remove_punct(tokenizer.convert_tokens_to_string(bpe_tokens_a[start:end])).strip().lower()
-    	if len(cur_word) == 0:
-    	    start = end
-    	    continue
-    	if cur_word == words_a[sp].strip().lower():
-    	    w = token_stem(words_a[sp])
-    	    if w in entities['entities']:
-    	    	for idx in range(start, end):
-    	    	    entity_ids_a[idx] = 1 + entities['entities'].index(w)
-    	    start = end
-    	    sp += 1
-#    	    print(w, end=" ")
-#    print()
-    if start != end:
-    	print("start is not same as end.", start, end, len(bpe_tokens_a), cur_word)
-#    	print(text_a)
-
-    start, sp = 0, 0
-    for end, t in enumerate(bpe_tokens_b):
-    	cur_word = remove_punct(tokenizer.convert_tokens_to_string(bpe_tokens_b[start:end])).strip().lower()
-    	if len(cur_word) == 0:
-    	    start = end
-    	    continue
-    	if cur_word == words_b[sp].strip().lower():
-    	    w = token_stem(words_b[sp])
-    	    if w in entities['entities']:
-    	    	for idx in range(start, end):
-    	    	    entity_ids_b[idx] = 1 + entities['entities'].index(w)
-    	    start = end
-    	    sp += 1
-#    	    print(w, end=" ")
-#    print()
-
     bpe_tokens = [tokenizer.bos_token] + bpe_tokens_a + [tokenizer.sep_token] + \
                     bpe_tokens_b + [tokenizer.eos_token]
-    entity_space_ids = [0] + entity_ids_a + [0] + entity_ids_b + [0]
+    entity_space_ids = [0] + _find_entities(text_a, bpe_tokens_a) + [0] + _find_entities(text_b, bpe_tokens_b) + [0]
 
     a_mask = [1] * (len(bpe_tokens_a) + 2) + [0] * (max_length - (len(bpe_tokens_a) + 2))
     b_mask = [0] * (len(bpe_tokens_a) + 2) + [1] * (len(bpe_tokens_b) + 1) + [0] * (max_length - len(bpe_tokens))
@@ -320,8 +316,8 @@ def arg_tokenizer(text_a, text_b, tokenizer, stopwords, relations:dict, punctuat
     output["punct_bpe_ids"] = punct_bpe_ids
     output["a_mask"] = a_mask
     output["b_mask"] = b_mask
-    # print(list(zip(bare_tokens, entity_bpe_ids)))
-    # print(entities['entities'])
+#    print(list(zip(bare_tokens, entity_bpe_ids)))
+#    print(entities['entities'])
     # raise Exception()
     return output
 
