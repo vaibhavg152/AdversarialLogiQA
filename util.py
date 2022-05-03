@@ -74,7 +74,6 @@ class ArgumentGCN(nn.Module):
                 punctuation_graph,
                 entity_graph,
                 extra_factor=None):
-        ''' '''
         '''
         Current: 2 relation patterns.
             - argument edge. (most of them are causal relations)
@@ -93,8 +92,19 @@ class ArgumentGCN(nn.Module):
         graph_punctuation = dd_graph * punctuation_graph
 
         node_neighbor_num = graph_argument.sum(-1) + graph_entity.sum(-1) + graph_punctuation.sum(-1)
-        node_neighbor_num_mask = (node_neighbor_num >= 1).long()
-        node_neighbor_num = util.replace_masked_values(node_neighbor_num.float(), node_neighbor_num_mask, 1)
+#        print("GArg", graph_argument)
+#        print(graph_argument.sum(-1))
+#        print("GEnt", graph_entity)
+#        print(graph_entity.sum(-1))
+        print(graph_entity.max())
+        print(entity_graph.max())
+#        print("GPun", graph_punctuation)
+#        print(graph_punctuation.sum(-1))
+#        print("NNN", node_neighbor_num)
+#        node_neighbor_num_mask = (node_neighbor_num >= 1).long()
+#        print("NNNMask", node_neighbor_num_mask)
+#        node_neighbor_num = util.replace_masked_values(node_neighbor_num.float(), node_neighbor_num_mask, 1)
+#        print("NNN", node_neighbor_num)
 
         all_weight = []
         for step in range(self.iteration_steps):
@@ -112,28 +122,25 @@ class ArgumentGCN(nn.Module):
             self_node_info = self._self_node_fc(node)
 
             ''' (2) Message Propagation (each relation type) '''
-            
             node_info_argument = self._node_fc_argument(node)
             node_weight = util.replace_masked_values(
                 d_node_weight.unsqueeze(1).expand(-1, node_len, -1),
                 graph_argument,
-                0)  
+                0)
             node_info_argument = torch.matmul(node_weight, node_info_argument)
 
-            
             node_info_entity = self._node_fc_entity(node)
             node_weight = util.replace_masked_values(
                 d_node_weight.unsqueeze(1).expand(-1, node_len, -1),
                 graph_entity,
-                0)  
+                0)
             node_info_entity = torch.matmul(node_weight, node_info_entity)
 
-            
             node_info_punctuation = self._node_fc_punctuation(node)
             node_weight = util.replace_masked_values(
                 d_node_weight.unsqueeze(1).expand(-1, node_len, -1),
                 graph_punctuation,
-                0)  
+                0)
             node_info_punctuation = torch.matmul(node_weight, node_info_punctuation)
 
             agg_node_info = (node_info_argument + node_info_entity + node_info_punctuation) / node_neighbor_num.unsqueeze(-1)
@@ -183,7 +190,6 @@ class ArgumentGCN_wreverseedges_double(nn.Module):
                 argument_graph,  
                 punctuation_graph,  
                 extra_factor=None):
-        ''' '''
         '''
         Current: 2 relation patterns & reversed directed edges.
             - argument edge. (most of them are causal relations)

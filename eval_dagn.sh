@@ -26,6 +26,6 @@ CUDA_VISIBLE_DEVICES=0 python3 -u run_multiple_choice.py --data_dir $LOGIQA_DIR 
     --use_gcn \
     --gcn_steps 2 \
     --max_seq_length 256 \
-    --per_device_eval_batch_size 1 \
+    --per_device_eval_batch_size 4 \
     --gradient_accumulation_steps 4 \
     --overwrite_output_dir

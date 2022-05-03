@@ -192,6 +192,7 @@ def main():
 
     parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments))
     model_args, data_args, training_args = parser.parse_args_into_dataclasses()
+    print(training_args)
 
     if (
         os.path.exists(training_args.output_dir)
@@ -447,7 +448,7 @@ def main():
             eval_dataset=eval_dataset,
             compute_metrics=compute_metrics,
         )
-    print("Data loader has this:", iter(trainer.get_eval_dataloader()).__next__())
+#    print("Data loader has this:", iter(trainer.get_eval_dataloader()).__next__())
 
 
     # Training
