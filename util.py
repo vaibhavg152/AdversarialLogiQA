@@ -92,19 +92,15 @@ class ArgumentGCN(nn.Module):
         graph_punctuation = dd_graph * punctuation_graph
 
         node_neighbor_num = graph_argument.sum(-1) + graph_entity.sum(-1) + graph_punctuation.sum(-1)
-#        print("GArg", graph_argument)
-#        print(graph_argument.sum(-1))
-#        print("GEnt", graph_entity)
-#        print(graph_entity.sum(-1))
-        print(graph_entity.max())
-        print(entity_graph.max())
-#        print("GPun", graph_punctuation)
-#        print(graph_punctuation.sum(-1))
-#        print("NNN", node_neighbor_num)
-#        node_neighbor_num_mask = (node_neighbor_num >= 1).long()
-#        print("NNNMask", node_neighbor_num_mask)
-#        node_neighbor_num = util.replace_masked_values(node_neighbor_num.float(), node_neighbor_num_mask, 1)
-#        print("NNN", node_neighbor_num)
+        node_neighbor_num_mask = (node_neighbor_num >= 1).long()
+        node_neighbor_num = util.replace_masked_values(node_neighbor_num.float(), node_neighbor_num_mask, 1)
+#        print("GArg", graph_argument.sum(-1)[0])
+#        print("GPun", graph_punctuation.sum(-1)[0])
+#        print("GEnt", graph_entity.sum(-1)[0])
+	#        print(graph_entity.max().cpu().numpy(), end='  ')
+#        print("NNN", node_neighbor_num[0])
+#        print("NNNMask", node_neighbor_num_mask[0])
+#        print("NNN", node_neighbor_num[0])
 
         all_weight = []
         for step in range(self.iteration_steps):
@@ -144,6 +140,8 @@ class ArgumentGCN(nn.Module):
             node_info_punctuation = torch.matmul(node_weight, node_info_punctuation)
 
             agg_node_info = (node_info_argument + node_info_entity + node_info_punctuation) / node_neighbor_num.unsqueeze(-1)
+#            print("Info arg", node_info_argument)
+#            print("Info ent", node_info_entity)
 
             ''' (3) Node Representation Update '''
             node = F.relu(self_node_info + agg_node_info)

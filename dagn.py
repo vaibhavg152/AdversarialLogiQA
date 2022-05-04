@@ -170,18 +170,19 @@ class DAGN(BertPreTrainedModel):
             ### ADDED:
             ent_matrix = torch.zeros(size=(n_split_ids, n_split_ids))
             for i1 in range(n_split_ids-1):
-                s1 = set(item_entities[split_ids_indices[i1]+1:split_ids_indices[i1+1]])
-                print("span1: ", s1)
+                s1 = set(item_entities[split_ids_indices[i1]+1:split_ids_indices[i1+1]].cpu().numpy())
+                # print("\nspan1: ", s1, "\nspan2:")
                 for i2 in range(i1+1, n_split_ids):
                     e = len(item_seq) if i2==n_split_ids-1 else split_ids_indices[i2+1]
-                    print("span2", set(item_entities[split_ids_indices[i2]+1: e]))
-                    for ent in item_entities[split_ids_indices[i2]+1: e]:
-                        if ent in s1:
+                    s2 = set(item_entities[split_ids_indices[i2]+1: e].cpu().numpy())
+                    # print(s2, end=' ')
+                    for ent in s2:
+                        if ent>0 and ent in s1:
                             ent_matrix[i1, i2] = 1
                             break
 
             entity_graphs.append(ent_matrix)
-#            print(ent_matrix)
+            # print('\n', ent_matrix)
             ###
             encoded_spans.append(item_spans)
             span_masks.append(item_mask)
@@ -204,8 +205,9 @@ class DAGN(BertPreTrainedModel):
         for bidx, m in enumerate(entity_graphs):
             for ridx, r in enumerate(m):
                 for cidx, c in enumerate(r[ridx+1:]):
-                    entity_adjacency[bidx, ridx, cidx] = r[cidx]
-                    entity_adjacency[bidx, cidx, ridx] = r[cidx]
+                    entity_adjacency[bidx, ridx, cidx] = c
+                    entity_adjacency[bidx, cidx, ridx] = c
+        # print("ayo entiti graf", entity_adjacency.sum(0))
         ###
 
         # Truncate head and tail of each list in edges HERE.
