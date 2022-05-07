@@ -5,7 +5,7 @@ import time
 
 nlp = spacy.load('en_core_web_sm')
 
-data_path = 'logiqa_data/'
+data_path = 'Shakespeare_logiqa'
 files = ['Eval.txt', 'Test.txt', 'Train.txt']
 
 
@@ -18,7 +18,7 @@ def ner(text):
 
 
 for filename in files:
-    with open(data_path+filename, 'r') as f:
+    with open(data_path+"/"+filename, 'r') as f:
     	lines = f.readlines()
     assert len(lines)%8==0
     n_examples = len(lines) // 8

@@ -8,7 +8,7 @@ export DATA_PROCESSING_VERSION=32
 export MODEL_VERSION=2132
 export GNN_VERSION=GCN
 export SAVE_DIR=dagn
-export MODEL_DIR=/scratch/vm2241/AdversarialLogiQA/Checkpoints/$TASK_NAME/$SAVE_DIR/checkpoint-6400/
+export MODEL_DIR=/scratch/vm2241/AdversarialLogiQA/CheckpointsEntity/$TASK_NAME/$SAVE_DIR/checkpoint-6400/
 
 CUDA_VISIBLE_DEVICES=0 python3 -u run_multiple_choice.py --data_dir $LOGIQA_DIR --output_dir /scratch/vm2241/AdversarialLogiQA/Checkpoints/$TASK_NAME/${SAVE_DIR} \
     --disable_tqdm \
