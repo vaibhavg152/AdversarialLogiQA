@@ -7,9 +7,9 @@ export DATA_PROCESSING_VERSION=32
 export MODEL_VERSION=2132
 export GNN_VERSION=GCN
 export SAVE_DIR=dagn
-export MODEL_DIR=Checkpoints/$TASK_NAME/$SAVE_DIR/checkpoint-6400/
+export MODEL_DIR=CheckpointsEntity/$TASK_NAME/$SAVE_DIR/checkpoint-6400/
 
-for i in `seq 5 5 60`
+for i in `seq 5 5 80`
 do
 	echo $i
 	python adding_irrelevant_info.py $i
@@ -36,7 +36,7 @@ do
 	    --per_device_eval_batch_size 4 \
 	    --gradient_accumulation_steps 4 \
 	    --output_dir Checkpoints/$TASK_NAME/${SAVE_DIR} \
-	    --numnet_drop 0.2 > results/out_shakes_$i.txt 2>&1
+	    --numnet_drop 0.2 > results/out_ent_shakes_$i.txt 2>&1
 	export RECLOR_DIR=Brown_logiqa
 	rm -r $RECLOR_DIR/cached_data/
         CUDA_VISIBLE_DEVICES=0 python3 run_multiple_choice.py \
@@ -60,6 +60,6 @@ do
             --per_device_eval_batch_size 4 \
             --gradient_accumulation_steps 4 \
             --output_dir Checkpoints/$TASK_NAME/${SAVE_DIR} \
-            --numnet_drop 0.2 > results/out_brown_$i.txt 2>&1
+            --numnet_drop 0.2 > results/out_ent_brown_$i.txt 2>&1
 
 done

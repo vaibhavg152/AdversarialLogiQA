@@ -31,6 +31,8 @@ from nltk.stem import WordNetLemmatizer, SnowballStemmer
 stemmer = SnowballStemmer("english")
 
 import string
+import spacy
+nlp = spacy.load('en_core_web_sm')
 
 
 def token_stem(token):
@@ -138,7 +140,6 @@ def arg_tokenizer(text_a, text_b, tokenizer, stopwords, relations:dict, punctuat
     	words = remove_punct(text).split()
     	# print("removed non-alnum:", remove_punct(text))
     	entity_ids = [0 for _ in tokens]
-
     	if stemming:
     	    entities['entities'] = [token_stem(remove_punct(token).strip()) for token in entities['entities']]
 
@@ -247,6 +248,12 @@ def arg_tokenizer(text_a, text_b, tokenizer, stopwords, relations:dict, punctuat
     ''' start '''
     bpe_tokens_a = tokenizer.tokenize(text_a)
     bpe_tokens_b = tokenizer.tokenize(text_b)
+    if entities is None:
+        doc = nlp(text)
+        ents = []
+        for e in doc.ents:
+    	    ents += e.text.split()
+        entities = {'entities': list(set(ents))}
 
     bpe_tokens = [tokenizer.bos_token] + bpe_tokens_a + [tokenizer.sep_token] + \
                     bpe_tokens_b + [tokenizer.eos_token]

@@ -138,16 +138,13 @@ if is_torch_available():
                             examples = processor.get_dev_demos(data_dir)
                         else:
                             examples = processor.get_dev_examples(data_dir)
-                        entities = processor.get_dev_entities(data_dir)
                     elif mode == Split.test:
                         examples = processor.get_test_examples(data_dir)
-                        entities = processor.get_test_entities(data_dir)
                     elif mode == Split.train:
                         if demo:
                             examples = processor.get_train_demos(data_dir)
                         else:
                             examples = processor.get_train_examples(data_dir)
-                        entities = processor.get_train_entities(data_dir)
                     else:
                         raise Exception()
                     logger.info("Training examples: %s", len(examples))
@@ -155,7 +152,6 @@ if is_torch_available():
 
                     self.features = convert_examples_to_arg_features(
                         examples,
-                        entities,
                         label_list,
                         arg_tokenizer,
                         relations,
@@ -344,7 +340,6 @@ class LogiQAProcessor(DataProcessor):
 
 def convert_examples_to_arg_features(
     examples: List[InputExample],
-    entities: List[Dict],
     label_list: List[str],
     arg_tokenizer,
     relations: Dict,
@@ -384,7 +379,7 @@ def convert_examples_to_arg_features(
                 text_b = example.question + " " + ending
 
             stopwords = list(gensim.parsing.preprocessing.STOPWORDS) + punctuations
-            inputs = arg_tokenizer(text_a, text_b, tokenizer, stopwords, relations, punctuations, max_ngram, max_length, entities=entities[ex_index])
+            inputs = arg_tokenizer(text_a, text_b, tokenizer, stopwords, relations, punctuations, max_ngram, max_length)
             choices_inputs.append(inputs)
 
         label = label_map[example.label]
