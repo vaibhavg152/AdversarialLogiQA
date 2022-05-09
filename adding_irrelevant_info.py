@@ -94,7 +94,7 @@ def prepare_irrelavent_data(filename, pos: Position, irrelevant_data_source,
       of.write(question)
       for i in range(4):
         of.write(answers[i])
-    print(out_file_name)
+    # print(out_file_name)
 
 shakespearean_text = group_sent_by_length(shakespearean_text)
 brown_natural = group_sent_by_length(brown_natural)

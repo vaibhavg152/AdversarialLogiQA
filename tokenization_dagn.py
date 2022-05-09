@@ -249,7 +249,7 @@ def arg_tokenizer(text_a, text_b, tokenizer, stopwords, relations:dict, punctuat
     bpe_tokens_a = tokenizer.tokenize(text_a)
     bpe_tokens_b = tokenizer.tokenize(text_b)
     if entities is None:
-        doc = nlp(text)
+        doc = nlp(text_a + " " + text_b)
         ents = []
         for e in doc.ents:
     	    ents += e.text.split()
