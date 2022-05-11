@@ -7,7 +7,7 @@ export DATA_PROCESSING_VERSION=32
 export MODEL_VERSION=2132
 export GNN_VERSION=GCN
 export SAVE_DIR=dagn
-export MODEL_DIR=CheckpointsEntity/$TASK_NAME/$SAVE_DIR/checkpoint-6400/
+export MODEL_DIR=Checkpoints/$TASK_NAME/$SAVE_DIR/checkpoint-6400/
 
 CUDA_VISIBLE_DEVICES=0 python3 run_multiple_choice.py \
     --disable_tqdm \
@@ -15,7 +15,6 @@ CUDA_VISIBLE_DEVICES=0 python3 run_multiple_choice.py \
     --tokenizer_name roberta-large \
     --model_type $MODEL_TYPE \
     --model_name_or_path $MODEL_DIR \
-    --do_eval \
     --do_predict \
     --data_dir $RECLOR_DIR \
     --graph_building_block_version $GRAPH_VERSION \

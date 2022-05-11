@@ -496,6 +496,10 @@ def main():
             logger.info("*** Test ***")
 
             test_result = trainer.predict(test_dataset)
+            preds = test_result.predictions  # np array. (1000, 4)
+            pred_ids = np.argmax(preds, axis=1)
+            print(pred_ids)
+            print(test_result.label_ids)
 
             output_test_file = os.path.join(training_args.output_dir, data_args.data_dir + "_test_results.txt")
             if trainer.is_world_master():
