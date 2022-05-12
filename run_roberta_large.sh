@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 export RECLOR_DIR=reclor_data
-export TASK_NAME=reclor
+export LOGIQA_DIR=/scratch/vm2241/AdversarialLogiQA/logiqa_data/
+export TASK_NAME=logiqa
 export MODEL_DIR=roberta-large
 export MODEL_TYPE=PLM
 export SAVE_DIR=plm
@@ -12,7 +13,7 @@ CUDA_VISIBLE_DEVICES=0 python3 run_multiple_choice.py \
     --do_train \
     --do_eval \
     --do_predict \
-    --data_dir $RECLOR_DIR \
+    --data_dir $LOGIQA_DIR \
     --max_seq_length 256 \
     --per_gpu_eval_batch_size 8 \
     --per_gpu_train_batch_size 8 \
@@ -20,9 +21,8 @@ CUDA_VISIBLE_DEVICES=0 python3 run_multiple_choice.py \
     --learning_rate 1e-05 \
     --num_train_epochs 10.0 \
     --output_dir Checkpoints/$TASK_NAME/${SAVE_DIR} \
-    --fp16 \
     --logging_steps 200 \
-    --save_steps 200 \
+    --save_steps 800 \
     --adam_beta1 0.9 \
     --adam_beta2 0.98 \
     --adam_epsilon 1e-6 \

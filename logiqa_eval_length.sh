@@ -9,7 +9,7 @@ export GNN_VERSION=GCN
 export SAVE_DIR=dagn
 
 source /ext3/miniconda3/etc/profile.d/conda.sh
-for i in `seq 5 5 80`
+for i in `seq 5 5 60`
 do
 	echo $i
 	conda activate data
