@@ -33,6 +33,10 @@ shakespearean_text = [text.replace('\n', ' ') for text in sent_tokenize(dataset[
 mdetok = MosesDetokenizer('en')
 brown_natural = [mdetok(' '.join(sent).replace('``', '').replace("''", '').replace('`', "").split())  for sent in brown.sents()]
 
+# Load European Parliament conversations data
+europarl_raw = open('europarl_raw.txt').readlines()
+europarl_raw = [i.strip() for i in europarl_raw]
+
 # Ensure that Train, Eval and Test files are in the same directory if not downloading
 # !wget https://raw.githubusercontent.com/lgw863/LogiQA-dataset/master/Train.txt -O Train.txt
 # !wget https://raw.githubusercontent.com/lgw863/LogiQA-dataset/master/Eval.txt -O Eval.txt
@@ -98,7 +102,8 @@ def prepare_irrelavent_data(filename, pos: Position, irrelevant_data_source,
 
 shakespearean_text = group_sent_by_length(shakespearean_text)
 brown_natural = group_sent_by_length(brown_natural)
-data_sources = {'Brown': brown_natural, 'Shakespeare': shakespearean_text}
+europarl_raw = group_sent_by_length(europarl_raw)
+data_sources = {'shakespeare': shakespearean_text, 'brown': brown_natural, 'europarl_raw': europarl_raw}
 logiQA_files = ['logiqa_data/Eval.txt', 'logiqa_data/Test.txt']
 position = Position.IN_BETWEEN
 
